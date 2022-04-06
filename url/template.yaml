@@ -1,0 +1,65 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >-
+  Backend Assignment 1
+
+Resources:
+  Shortnerfunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: Lambda for URlShortner Assignment
+      Handler: app.handler
+      Runtime: nodejs14.x
+      CodeUri: urlS/
+      Environment:
+        Variables:
+          Urltable: !Ref dynamodb01
+      Policies:
+        - AWSLambdaDynamoDBExecutionRole
+        - DynamoDBCrudPolicy:
+            TableName: !Ref dynamodb01
+      Events:
+        EcplicitApi:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: POST
+            Path: /url
+            TimeoutInMillis: 15000
+            PayloadFormatVersion: "2.0"
+            RouteSettings:
+              ThrottlingBurstLimit: 600
+
+        Api:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref HttpApi
+            Method: GET
+            Path: /url
+            TimeoutInMillis: 15000
+            PayloadFormatVersion: "2.0"
+            RouteSettings:
+              ThrottlingBurstLimit: 600
+
+  dynamodb01:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      AttributeDefinitions:
+        - AttributeName: "short_url"
+          AttributeType: "S"
+
+      ProvisionedThroughput:
+        ReadCapacityUnits: "5"
+        WriteCapacityUnits: "5"
+      KeySchema:
+        - AttributeName: "short_url"
+          KeyType: "HASH"
+
+  HttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      RouteSettings:
+        "POST /url":
+          ThrottlingBurstLimit: 500
+        "GET /url":
+          ThrottlingBurstLimit: 500
